@@ -1,0 +1,40 @@
+import RPi.GPIO as GPIO
+import time
+
+GPIO.setmode(GPIO.BCM)
+
+dac = [26, 19, 13, 6, 5, 11, 9, 10]
+comp = 4
+troyka = 17
+MaxVoltage = 3.3
+Bits = 8
+Levels = 2**Bits
+voltage = 0
+
+GPIO.setup(dac, GPIO.OUT)
+GPIO.setup(troyka, GPIO.OUT, initial = 1)
+GPIO.setup(comp, GPIO.IN)
+
+def decimal2binary(value):
+    return [int(bit) for bit in bin(value)[2:].zfill(8)]
+
+def adc():
+    for counter in range (Levels):
+        signal = decimal2binary(counter)
+        GPIO.output(dac, signal)
+        time.sleep(0.0005)
+        comparatorValue = GPIO.input(comp)
+        if comparatorValue == 0:
+            print("ADC value = {}, {}".format(counter, signal))
+            return counter
+
+try:
+    while True:
+        voltage = adc() / Levels * MaxVoltage
+        print("voltage is {:.2f}".format(voltage))
+except KeyboardInterrupt:
+    print('\nСтоп')
+finally:
+    GPIO.output(dac, 0)
+    GPIO.output(troyka, 0)
+    GPIO.cleanup()
